@@ -121,12 +121,13 @@ class SimpleRSSParser:
         })
     
     def parse_rss_feed(self, feed_url, source_name):
-        """Parse RSS feed using BeautifulSoup"""
+        """Parse RSS feed using BeautifulSoup with html.parser"""
         try:
             response = self.session.get(feed_url, timeout=10)
             response.raise_for_status()
             
-            soup = BeautifulSoup(response.content, 'xml')
+            # Use html.parser instead of xml to avoid lxml dependency
+            soup = BeautifulSoup(response.content, 'html.parser')
             items = soup.find_all('item')
             
             news_items = []
@@ -186,7 +187,7 @@ class SimpleRSSParser:
     
     def _parse_pub_date(self, item):
         """Parse publication date from various possible fields"""
-        date_fields = ['pubDate', 'date', 'published', 'updated']
+        date_fields = ['pubdate', 'date', 'published', 'updated']
         
         for field in date_fields:
             date_elem = item.find(field)
