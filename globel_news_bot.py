@@ -20,15 +20,14 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', "8479210213:AAHi5qqaaGkZ8Jyb9ANwWjjcUqbq
 CHAT_ID = os.environ.get('CHAT_ID', "@GlobelNewsAlert")
 
 # News Sources (Updated with more reliable feeds)
-# Updated RSS_FEEDS in your config:
-# Updated RSS_FEEDS in your config:
 RSS_FEEDS = [
-    {'name': 'Reuters', 'url': 'https://www.reutersagency.com/feed/?best-regions=world&post-type=best'},
-    {'name': 'AP News', 'url': 'https://rss.ap.org/rss/topnews'},
-    {'name': 'NPR News', 'url': 'https://feeds.npr.org/1001/rss.xml'},
-    {'name': 'CBC News', 'url': 'https://rss.cbc.ca/lineup/world.xml'},
-    {'name': 'France 24', 'url': 'https://www.france24.com/en/rss'},
+    {'name': 'BBC World', 'url': 'https://feeds.bbci.co.uk/news/world/rss.xml'},
+    {'name': 'CNN World', 'url': 'https://rss.cnn.com/rss/edition_world.rss'},
+    {'name': 'Al Jazeera', 'url': 'https://www.aljazeera.com/xml/rss/all.xml'},
+    {'name': 'The Guardian', 'url': 'https://www.theguardian.com/international/rss'},
+    {'name': 'DW News', 'url': 'https://rss.dw.com/rdf/rss-en-all'},
 ]
+
 # Bot Settings
 POST_INTERVAL = int(os.environ.get('POST_INTERVAL', '900'))
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '3'))
@@ -478,5 +477,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
