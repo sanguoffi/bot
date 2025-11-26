@@ -1,0 +1,20 @@
+services:
+  - type: worker
+    name: global-news-bot
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python globel_news_bot.py
+    envVars:
+      - key: BOT_TOKEN
+        value: 8479210213:AAHi5qqaaGkZ8Jyb9ANwWjjcUqbqbxHGbtY
+      - key: CHAT_ID
+        value: "@GlobelNewsAlert"
+      - key: POST_INTERVAL
+        value: "900"
+      - key: BATCH_SIZE
+        value: "3"
+      - key: DELAY_BETWEEN_POSTS
+        value: "2"
+      - key: MAX_NEWS_AGE_HOURS
+        value: "8"
