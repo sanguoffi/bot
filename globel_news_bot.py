@@ -16,21 +16,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ===== CONFIGURATION =====
-# Use environment variables for Render
 BOT_TOKEN = os.environ.get('BOT_TOKEN', "8479210213:AAHi5qqaaGkZ8Jyb9ANwWjjcUqbqbxHGbtY")
 CHAT_ID = os.environ.get('CHAT_ID', "@GlobelNewsAlert")
 
-# News Sources (Only free public RSS feeds - no APIs)
+# News Sources (Updated with more reliable feeds)
 RSS_FEEDS = [
-    {'name': 'BBC World', 'url': 'http://feeds.bbci.co.uk/news/world/rss.xml'},
-    {'name': 'CNN World', 'url': 'http://rss.cnn.com/rss/edition_world.rss'},
+    {'name': 'BBC World', 'url': 'https://feeds.bbci.co.uk/news/world/rss.xml'},
+    {'name': 'CNN World', 'url': 'https://rss.cnn.com/rss/edition_world.rss'},
     {'name': 'Al Jazeera', 'url': 'https://www.aljazeera.com/xml/rss/all.xml'},
     {'name': 'The Guardian', 'url': 'https://www.theguardian.com/international/rss'},
     {'name': 'DW News', 'url': 'https://rss.dw.com/rdf/rss-en-all'},
 ]
 
 # Bot Settings
-POST_INTERVAL = int(os.environ.get('POST_INTERVAL', '900'))  # 15 minutes
+POST_INTERVAL = int(os.environ.get('POST_INTERVAL', '900'))
 BATCH_SIZE = int(os.environ.get('BATCH_SIZE', '3'))
 DELAY_BETWEEN_POSTS = int(os.environ.get('DELAY_BETWEEN_POSTS', '2'))
 MAX_NEWS_AGE_HOURS = int(os.environ.get('MAX_NEWS_AGE_HOURS', '8'))
@@ -112,35 +111,52 @@ class TelegramSender:
             logger.error(f"❌ Connection test failed: {e}")
             return False
 
-# ===== SIMPLE RSS PARSER =====
+# ===== IMPROVED RSS PARSER =====
 class SimpleRSSParser:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         })
     
     def parse_rss_feed(self, feed_url, source_name):
-        """Parse RSS feed using BeautifulSoup with html.parser"""
-        try:
-            response = self.session.get(feed_url, timeout=10)
-            response.raise_for_status()
-            
-            # Use html.parser instead of xml to avoid lxml dependency
-            soup = BeautifulSoup(response.content, 'html.parser')
-            items = soup.find_all('item')
-            
-            news_items = []
-            for item in items[:15]:  # Get latest 15 items
-                news_item = self._parse_rss_item(item, source_name)
-                if news_item and self._is_valid_news(news_item):
-                    news_items.append(news_item)
-            
-            return news_items
-            
-        except Exception as e:
-            logger.error(f"❌ Error parsing {source_name}: {e}")
-            return []
+        """Parse RSS feed with retry logic"""
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"📡 Fetching from {source_name} (attempt {attempt + 1})")
+                response = self.session.get(feed_url, timeout=15)
+                response.raise_for_status()
+                
+                # Try different parsers
+                try:
+                    soup = BeautifulSoup(response.content, 'lxml-xml')
+                except:
+                    try:
+                        soup = BeautifulSoup(response.content, 'xml')
+                    except:
+                        soup = BeautifulSoup(response.content, 'html.parser')
+                
+                items = soup.find_all('item') or soup.find_all('entry')
+                
+                news_items = []
+                for item in items[:10]:  # Get latest 10 items
+                    news_item = self._parse_rss_item(item, source_name)
+                    if news_item and self._is_valid_news(news_item):
+                        news_items.append(news_item)
+                
+                if news_items:
+                    logger.info(f"✅ Found {len(news_items)} from {source_name}")
+                return news_items
+                
+            except Exception as e:
+                logger.warning(f"⚠️ Attempt {attempt + 1} failed for {source_name}: {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2)  # Wait before retry
+                    continue
+                else:
+                    logger.error(f"❌ All attempts failed for {source_name}")
+                    return []
     
     def _parse_rss_item(self, item, source_name):
         """Parse individual RSS item"""
@@ -152,14 +168,14 @@ class SimpleRSSParser:
             title = title_elem.get_text().strip()
             
             # Extract description
-            description_elem = item.find('description')
+            description_elem = item.find('description') or item.find('summary') or item.find('content')
             description = description_elem.get_text().strip() if description_elem else ""
             
             # Extract link
             link_elem = item.find('link')
             if not link_elem:
                 return None
-            link = link_elem.get_text().strip()
+            link = link_elem.get('href') or link_elem.get_text().strip()
             
             # Extract publication date
             pub_date = self._parse_pub_date(item)
@@ -187,7 +203,7 @@ class SimpleRSSParser:
     
     def _parse_pub_date(self, item):
         """Parse publication date from various possible fields"""
-        date_fields = ['pubdate', 'date', 'published', 'updated']
+        date_fields = ['pubdate', 'pubDate', 'date', 'published', 'updated', 'dc:date']
         
         for field in date_fields:
             date_elem = item.find(field)
@@ -198,24 +214,24 @@ class SimpleRSSParser:
                     for fmt in ['%a, %d %b %Y %H:%M:%S %Z', 
                                '%a, %d %b %Y %H:%M:%S %z',
                                '%Y-%m-%dT%H:%M:%SZ',
-                               '%Y-%m-%d %H:%M:%S']:
+                               '%Y-%m-%d %H:%M:%S',
+                               '%d %b %Y %H:%M:%S %Z']:
                         try:
                             parsed_date = datetime.strptime(date_str, fmt)
-                            # Make timezone naive for comparison
                             return parsed_date.replace(tzinfo=None)
                         except ValueError:
                             continue
                 except:
                     continue
         
-        return datetime.now()  # Default to current time
+        return datetime.now()
     
     def _extract_image(self, item):
         """Extract image URL from RSS item"""
         try:
             # Check for media:content
-            media_content = item.find('media:content')
-            if media_content and media_content.get('type', '').startswith('image'):
+            media_content = item.find('media:content') or item.find('media:thumbnail')
+            if media_content:
                 return media_content.get('url', '')
             
             # Check for enclosure
@@ -223,13 +239,8 @@ class SimpleRSSParser:
             if enclosure and enclosure.get('type', '').startswith('image'):
                 return enclosure.get('url', '')
             
-            # Check for media:thumbnail
-            thumbnail = item.find('media:thumbnail')
-            if thumbnail:
-                return thumbnail.get('url', '')
-            
             # Check description for images
-            description = item.find('description')
+            description = item.find('description') or item.find('summary') or item.find('content')
             if description:
                 desc_text = description.get_text()
                 images = re.findall(r'src="([^"]+\.(?:jpg|jpeg|png|webp))"', desc_text)
@@ -273,11 +284,10 @@ class SimpleNewsFetcher:
         
         for feed_config in RSS_FEEDS:
             try:
-                logger.info(f"📡 Fetching from {feed_config['name']}")
                 news_items = self.parser.parse_rss_feed(feed_config['url'], feed_config['name'])
                 if news_items:
                     all_news.extend(news_items)
-                time.sleep(1)  # Be nice to servers
+                time.sleep(3)  # Longer delay between requests
             except Exception as e:
                 logger.error(f"❌ Error with {feed_config['name']}: {e}")
                 continue
@@ -293,13 +303,11 @@ class SimpleNewsFetcher:
             if not news:
                 continue
                 
-            # Simple deduplication based on first 40 chars of title
-            title_key = news['title'][:40].lower()
+            title_key = news['title'][:50].lower()
             if title_key not in seen_titles:
                 seen_titles.add(title_key)
                 unique_news.append(news)
         
-        # Sort by date (newest first)
         unique_news.sort(key=lambda x: x['published_at'] if x['published_at'] else datetime.now(), reverse=True)
         return unique_news[:10]
 
@@ -310,10 +318,8 @@ def format_news(news_item):
     description = html.escape(news_item['description'])
     source = html.escape(news_item['source'])
     
-    # Calculate time ago
     time_ago = get_time_ago(news_item['published_at'])
     
-    # Build message
     message = f"""<b>📰 {title}</b>
 
 📝 {description}
@@ -377,9 +383,8 @@ class NewsStorage:
         return url in self.posted_urls
     
     def cleanup_old_urls(self, max_urls=100):
-        """Keep only recent URLs to prevent file from growing too large"""
+        """Keep only recent URLs"""
         if len(self.posted_urls) > max_urls:
-            # Convert to list, take last max_urls, and convert back to set
             urls_list = list(self.posted_urls)
             self.posted_urls = set(urls_list[-max_urls:])
             self.save_posted_urls()
@@ -399,41 +404,37 @@ class SimpleNewsBot:
             
             if not news_list:
                 logger.warning("❌ No fresh news found in this cycle")
+                # Send a status message occasionally
+                if int(time.time()) % 3600 < 60:  # Once per hour
+                    self.sender.send_message("🤖 <b>Global News Bot Status</b>\n\n✅ Bot is running and monitoring news sources\n⏰ Next check in 15 minutes\n🌍 Sources: BBC, CNN, Al Jazeera, Guardian, DW")
                 return
             
             logger.info(f"📰 Found {len(news_list)} fresh news items")
             
             posted_count = 0
             for news in news_list[:BATCH_SIZE]:
-                # Check if URL was already posted (persistent check)
                 if self.storage.is_url_posted(news['url']):
                     logger.info(f"⏭️ Skipping duplicate: {news['title'][:50]}...")
                     continue
                 
                 caption, image_url = format_news(news)
                 
-                # Try to send with image first
                 success = False
                 if image_url and image_url.startswith('http'):
                     success = self.sender.send_photo(image_url, caption)
                 
-                # Fallback to text message
                 if not success:
                     success = self.sender.send_message(caption)
                 
                 if success:
                     posted_count += 1
-                    # Save to persistent storage
                     self.storage.add_posted_url(news['url'])
                     logger.info(f"✅ Posted: {news['title'][:50]}...")
                     
-                    # Delay between posts
                     if posted_count < BATCH_SIZE:
                         time.sleep(DELAY_BETWEEN_POSTS)
             
             logger.info(f"🎉 Cycle completed: Posted {posted_count} news items")
-            
-            # Clean up old URLs
             self.storage.cleanup_old_urls()
                 
         except Exception as e:
@@ -441,29 +442,19 @@ class SimpleNewsBot:
 
 def main():
     """Main function"""
-    # Render-specific startup message
     logger.info("🚀 Starting Global News Bot on Render...")
-    logger.info(f"🔧 Render Service: {os.environ.get('RENDER_SERVICE_NAME', 'Production')}")
     
     bot = SimpleNewsBot()
     
-    # Test connection first
     logger.info("🔗 Testing bot connection...")
     if not bot.sender.test_connection():
         logger.error("❌ Cannot start bot due to connection issues")
-        logger.error("💡 Please check Render environment variables:")
-        logger.error("   1. BOT_TOKEN is set")
-        logger.error("   2. CHAT_ID is set")
         return
     
-    logger.info("🌍 Global News Bot Started on Render!")
+    logger.info("🌍 Global News Bot Started!")
     logger.info(f"⏰ Posting every {POST_INTERVAL//60} minutes")
     logger.info(f"📦 Batch size: {BATCH_SIZE} posts per cycle")
     logger.info(f"📡 Monitoring {len(RSS_FEEDS)} news sources")
-    logger.info(f"💾 Persistent storage: Enabled")
-    logger.info(f"🕒 News freshness: {MAX_NEWS_AGE_HOURS} hours max")
-    logger.info("🔒 Security: No external APIs used")
-    logger.info("💰 Hosting: Render Free Tier")
     
     cycle_count = 0
     try:
@@ -482,7 +473,7 @@ def main():
         logger.error(f"❌ Unexpected error: {e}")
         logger.info("🔄 Restarting in 60 seconds...")
         time.sleep(60)
-        main()  # Restart
+        main()
 
 if __name__ == "__main__":
     main()
