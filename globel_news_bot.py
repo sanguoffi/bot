@@ -20,11 +20,13 @@ BOT_TOKEN = os.environ.get('BOT_TOKEN', "8479210213:AAHi5qqaaGkZ8Jyb9ANwWjjcUqbq
 CHAT_ID = os.environ.get('CHAT_ID', "@GlobelNewsAlert")
 
 # News Sources (Updated with more reliable feeds)
+# Updated RSS_FEEDS in your config:
+# Updated RSS_FEEDS in your config:
 RSS_FEEDS = [
-    {'name': 'Reuters World', 'url': 'https://www.reutersagency.com/feed/?best-regions=world&post-type=best'},
-    {'name': 'AP Top News', 'url': 'https://rss.ap.org/rss/topnews'},
-    {'name': 'NPR World', 'url': 'https://feeds.npr.org/1004/rss.xml'},
-    {'name': 'CBC World', 'url': 'https://rss.cbc.ca/lineup/world.xml'},
+    {'name': 'Reuters', 'url': 'https://www.reutersagency.com/feed/?best-regions=world&post-type=best'},
+    {'name': 'AP News', 'url': 'https://rss.ap.org/rss/topnews'},
+    {'name': 'NPR News', 'url': 'https://feeds.npr.org/1001/rss.xml'},
+    {'name': 'CBC News', 'url': 'https://rss.cbc.ca/lineup/world.xml'},
     {'name': 'France 24', 'url': 'https://www.france24.com/en/rss'},
 ]
 # Bot Settings
@@ -476,4 +478,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
