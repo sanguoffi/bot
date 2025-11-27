@@ -22,10 +22,10 @@ CHAT_ID = os.environ.get('CHAT_ID', "@GlobelNewsAlert")
 # News Sources (Updated with more reliable feeds)
 RSS_FEEDS = [
     {'name': 'BBC World', 'url': 'https://feeds.bbci.co.uk/news/world/rss.xml'},
-    {'name': 'CNN World', 'url': 'https://rss.cnn.com/rss/edition_world.rss'},
-    {'name': 'Al Jazeera', 'url': 'https://www.aljazeera.com/xml/rss/all.xml'},
-    {'name': 'The Guardian', 'url': 'https://www.theguardian.com/international/rss'},
-    {'name': 'DW News', 'url': 'https://rss.dw.com/rdf/rss-en-all'},
+    {'name': 'Reuters Business', 'url': 'https://www.reutersagency.com/feed/?best-topics=business-finance&post-type=best'},
+    {'name': 'AP News', 'url': 'https://rss.ap.org/rss/topnews'},
+    {'name': 'NPR News', 'url': 'https://feeds.npr.org/1001/rss.xml'},
+    {'name': 'CBC World', 'url': 'https://rss.cbc.ca/lineup/world.xml'},
 ]
 
 # Bot Settings
@@ -477,3 +477,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
