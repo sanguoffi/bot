@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Student Performance Predictor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, #1f2937, #020617);
+      color: #e5e7eb;
+    }
+    .app-container {
+      width: 100%;
+      max-width: 1040px;
+      padding: 2rem 1.5rem;
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.96);
+      border-radius: 1.5rem;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      backdrop-filter: blur(18px);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+    .badge {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(96, 165, 250, 0.8);
+      color: #bfdbfe;
+      background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.25), transparent);
+    }
+    .subtitle {
+      font-size: 0.85rem;
+      color: #9ca3af;
+      margin-bottom: 1.5rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem 1.5rem;
+    }
+    @media (max-width: 820px) {
+      .card {
+        padding: 1.5rem 1.25rem;
+      }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .title {
+        font-size: 1.3rem;
+      }
+    }
+    label {
+      font-size: 0.85rem;
+      color: #d1d5db;
+      display: block;
+      margin-bottom: 0.35rem;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: #6b7280;
+      margin-top: 0.2rem;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.55rem 0.7rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      background: rgba(15, 23, 42, 0.9);
+      color: #e5e7eb;
+      outline: none;
+      font-size: 0.9rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      resize: vertical;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.65);
+    }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .section-title {
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+    }
+    .actions {
+      margin-top: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .button-primary, .button-secondary {
+      border: none;
+      border-radius: 999px;
+      padding: 0.7rem 1.6rem;
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+    }
+    .button-primary {
+      color: #0b1120;
+      background: linear-gradient(135deg, #60a5fa, #22d3ee);
+      box-shadow: 0 12px 30px rgba(37, 99, 235, 0.4);
+    }
+    .button-secondary {
+      color: #e5e7eb;
+      background: rgba(31, 41, 55, 1);
+      border: 1px solid rgba(75, 85, 99, 0.9);
+    }
+    .button-primary:hover, .button-secondary:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+    }
+    .button-primary[disabled] {
+      opacity: 0.6;
+      cursor: wait;
+      transform: none;
+      box-shadow: none;
+    }
+    .status-text {
+      font-size: 0.8rem;
+      color: #9ca3af;
+    }
+    .error {
+      margin-top: 0.8rem;
+      font-size: 0.8rem;
+      color: #fecaca;
+    }
+    .footer {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .chip {
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      font-size: 0.7rem;
+      color: #9ca3af;
+    }
+    .two-column {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 900px) {
+      .two-column {
+        grid-template-columns: 1fr;
+      }
+    }
+    .summary-card, .parent-card {
+      border-radius: 1rem;
+      border: 1px solid rgba(31, 41, 55, 0.9);
+      padding: 1rem 1.1rem;
+      background: radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), rgba(15, 23, 42, 0.98));
+    }
+    .parent-card {
+      background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.08), rgba(15, 23, 42, 0.98));
+    }
+    .result-badge {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      border-radius: 999px;
+      padding: 0.15rem 0.6rem;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      color: #9ca3af;
+    }
+    .result-main {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-top: 0.4rem;
+      margin-bottom: 0.2rem;
+    }
+    .prob-text {
+      font-size: 0.9rem;
+      color: #a5b4fc;
+    }
+    .prob-bar {
+      position: relative;
+      margin-top: 0.8rem;
+      height: 0.5rem;
+      border-radius: 999px;
+      background: rgba(31, 41, 55, 0.9);
+      overflow: hidden;
+    }
+    .prob-bar-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22c55e, #a3e635);
+      transition: width 0.25s ease-out;
+    }
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.7rem;
+      font-size: 0.78rem;
+      color: #9ca3af;
+    }
+    .meta-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(55, 65, 81, 0.9);
+      padding: 0.15rem 0.5rem;
+    }
+    .suggestions {
+      margin-top: 1rem;
+      padding-top: 0.8rem;
+      border-top: 1px dashed rgba(55, 65, 81, 0.9);
+    }
+    .suggestions-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+    }
+    .suggestions ul {
+      margin: 0.3rem 0 0;
+      padding-left: 1.2rem;
+      font-size: 0.8rem;
+      color: #e5e7eb;
+    }
+    .suggestions li {
+      margin-bottom: 0.25rem;
+    }
+    .page {
+      display: none;
+    }
+    .page.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="badge">AI powered</div>
+          <div class="title">Student Performance Predictor</div>
+        </div>
+        <div class="chip">Backend: FastAPI · RandomForest</div>
+      </div>
+
+      <!-- PAGE 1: INPUT -->
+      <div id="page-input" class="page active">
+        <p class="subtitle">
+          Enter student details and let the model estimate the probability of passing,
+          the expected score, and generate a professional summary for parents.
+        </p>
+
+        <form id="predict-form">
+          <div class="section-title">Core academic details</div>
+          <div class="grid">
+            <div>
+              <label for="hours_study_per_day">Hours of Study per Day</label>
+              <input id="hours_study_per_day" type="number" min="0" max="24" step="0.5" required />
+              <div class="hint">Average focused study time in hours.</div>
+            </div>
+
+            <div>
+              <label for="past_average_score">Past Average Score (%)</label>
+              <input id="past_average_score" type="number" min="0" max="100" step="1" required />
+              <div class="hint">Previous semester or internal marks.</div>
+            </div>
+
+            <div>
+              <label for="absences">Total Absences</label>
+              <input id="absences" type="number" min="0" step="1" required />
+              <div class="hint">Number of missed classes.</div>
+            </div>
+
+            <div>
+              <label for="parent_education">Parent Education Level</label>
+              <select id="parent_education" required>
+                <option value="" disabled selected>Select level</option>
+                <option value="none">No formal education</option>
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+                <option value="bachelor">Bachelor's</option>
+                <option value="master">Master's or above</option>
+              </select>
+              <div class="hint">Highest education level among parents.</div>
+            </div>
+
+            <div>
+              <label for="internet">Internet at Home</label>
+              <select id="internet" required>
+                <option value="" disabled selected>Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+              <div class="hint">Regular access to internet for study.</div>
+            </div>
+
+            <div>
+              <label for="health">Health (1–5)</label>
+              <input id="health" type="number" min="1" max="5" step="1" required />
+              <div class="hint">Self-reported overall health (1 = poor, 5 = excellent).</div>
+            </div>
+          </div>
+
+          <div class="section-title">Lifestyle & study habits (for suggestions)</div>
+          <div class="grid">
+            <div>
+              <label for="sleep_hours">Average Sleep Hours</label>
+              <input id="sleep_hours" type="number" min="0" max="24" step="0.5" />
+              <div class="hint">Total sleep per day. (Optional)</div>
+            </div>
+
+            <div>
+              <label for="screen_time_hours">Daily Screen Time (not for study)</label>
+              <input id="screen_time_hours" type="number" min="0" max="24" step="0.5" />
+              <div class="hint">Social media / reels / gaming time. (Optional)</div>
+            </div>
+
+            <div>
+              <label for="exam_stress_level">Exam Stress Level (1–5)</label>
+              <input id="exam_stress_level" type="number" min="1" max="5" step="1" />
+              <div class="hint">1 = no stress, 5 = extreme stress. (Optional)</div>
+            </div>
+
+            <div>
+              <label for="has_study_plan">Do you follow a study plan?</label>
+              <select id="has_study_plan">
+                <option value="" selected>Choose (optional)</option>
+                <option value="true">Yes, I follow a plan</option>
+                <option value="false">No, I just study randomly</option>
+              </select>
+              <div class="hint">Helps generate better suggestions.</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button type="submit" class="button-primary" id="submit-btn">
+              <span>Predict & Generate Report</span>
+              <span id="btn-spinner" style="display:none;">⏳</span>
+            </button>
+            <span class="status-text" id="status-text">Model hosted locally at <code>/predict</code>.</span>
+          </div>
+
+          <div class="error" id="error-text"></div>
+        </form>
+
+        <div class="footer">
+          <span>Use this as a template for your mini-project / final-year project.</span>
+          <span>All predictions are indicative and for educational use only.</span>
+        </div>
+      </div>
+
+      <!-- PAGE 2: RESULT + PARENT MESSAGE -->
+      <div id="page-result" class="page">
+        <p class="subtitle">
+          Prediction summary and automatically generated message for parents
+          based on the student's performance indicators.
+        </p>
+
+        <div class="two-column">
+          <div class="summary-card">
+            <div class="result-badge" id="result-pill">Prediction</div>
+            <div class="result-main" id="result-main">Result will appear here</div>
+            <div class="prob-text" id="prob-text"></div>
+            <div class="prob-bar">
+              <div class="prob-bar-fill" id="prob-bar-fill"></div>
+            </div>
+
+            <div class="meta-row">
+              <span class="meta-pill" id="meta-score">Estimated score: –</span>
+              <span class="meta-pill" id="meta-risk">Risk level: –</span>
+              <span class="meta-pill" id="meta-study">Study hours: –</span>
+            </div>
+
+            <div class="suggestions" id="suggestions-box" style="display:none;">
+              <div class="suggestions-title">Key suggestions for the student:</div>
+              <ul id="suggestions-list"></ul>
+            </div>
+          </div>
+
+          <div class="parent-card">
+            <div class="suggestions-title">Message to Parents</div>
+            <p style="font-size:0.8rem; color:#9ca3af; margin-top:0.2rem; margin-bottom:0.6rem;">
+              This section generates a formal summary you can share with the student's parents
+              about performance and study guidance.
+            </p>
+
+            <label for="parent_mobile" style="margin-bottom:0.3rem;">Parent mobile number:</label>
+            <input id="parent_mobile" type="tel" placeholder="e.g. 9876543210" />
+
+            <label for="parent_message" style="margin-top:0.7rem; margin-bottom:0.3rem;">Parent message (editable):</label>
+            <textarea id="parent_message" rows="8"></textarea>
+
+            <div class="actions" style="margin-top:0.7rem; align-items:flex-start;">
+              <button type="button" class="button-secondary" id="copy-message-btn">
+                Copy message
+              </button>
+              <button type="button" class="button-primary" id="send-message-btn">
+                Send to parent
+              </button>
+              <span class="status-text" id="copy-status" style="flex:1 1 auto;"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:1.6rem; justify-content:space-between;">
+          <button type="button" class="button-secondary" id="back-btn">
+            ⬅ Back to input
+          </button>
+          <span class="status-text">
+            You can adjust inputs and generate a new report anytime.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const pageInput = document.getElementById("page-input");
+    const pageResult = document.getElementById("page-result");
+
+    const form = document.getElementById("predict-form");
+    const submitBtn = document.getElementById("submit-btn");
+    const spinner = document.getElementById("btn-spinner");
+    const statusText = document.getElementById("status-text");
+    const errorText = document.getElementById("error-text");
+
+    const resultMain = document.getElementById("result-main");
+    const resultPill = document.getElementById("result-pill");
+    const probText = document.getElementById("prob-text");
+    const probBarFill = document.getElementById("prob-bar-fill");
+    const suggestionsBox = document.getElementById("suggestions-box");
+    const suggestionsList = document.getElementById("suggestions-list");
+    const metaScore = document.getElementById("meta-score");
+    const metaRisk = document.getElementById("meta-risk");
+    const metaStudy = document.getElementById("meta-study");
+
+    const parentMobileField = document.getElementById("parent_mobile");
+    const parentMessageField = document.getElementById("parent_message");
+    const copyBtn = document.getElementById("copy-message-btn");
+    const sendBtn = document.getElementById("send-message-btn");
+    const copyStatus = document.getElementById("copy-status");
+    const backBtn = document.getElementById("back-btn");
+
+    function setLoading(isLoading) {
+      if (isLoading) {
+        submitBtn.setAttribute("disabled", "disabled");
+        spinner.style.display = "inline-block";
+        statusText.textContent = "Contacting model...";
+      } else {
+        submitBtn.removeAttribute("disabled");
+        spinner.style.display = "none";
+        statusText.textContent = "Model hosted locally at /predict.";
+      }
+    }
+
+    function showPage(page) {
+      if (page === "input") {
+        pageInput.classList.add("active");
+        pageResult.classList.remove("active");
+      } else {
+        pageResult.classList.add("active");
+        pageInput.classList.remove("active");
+      }
+    }
+
+    function buildParentMessage(pass, percent, score, riskLevel, suggestions, inputs) {
+      const studyHours = inputs.hours_study_per_day;
+      const absences = inputs.absences;
+      const pastScore = inputs.past_average_score;
+
+      const statusLine = pass
+        ? `is likely to pass the upcoming examinations with an estimated score of around ${score.toFixed(1)} out of 100.`
+        : `is currently at risk of not performing up to expectations, with an estimated score of around ${score.toFixed(1)} out of 100.`;
+
+      const probLine = `The model estimates a ${Math.round(percent)}% chance of passing based on current study habits and past performance.`;
+
+      const academicLine = `At present, your ward studies approximately ${studyHours} hour(s) per day, has a past average score of ${pastScore}%, and has ${absences} recorded absence(s).`;
+
+      const riskText =
+        riskLevel === "low"
+          ? "Overall risk level is low, and the student is generally on the right track."
+          : riskLevel === "medium"
+          ? "The overall risk level is moderate, and a bit more consistency can significantly improve performance."
+          : "The overall risk level is high, and focused support from home and school will be important.";
+
+      const topSuggestions = (suggestions || []).slice(0, 4);
+
+      let suggestionText = "";
+      if (topSuggestions.length > 0) {
+        suggestionText =
+          "Key suggestions to support your ward are:\n" +
+          topSuggestions.map((s, idx) => `${idx + 1}. ${s}`).join("\n");
+      }
+
+      return (
+        `Dear Parent/Guardian,\n\n` +
+        `This is an automatically generated summary of your ward's current academic status based on the details provided.\n\n` +
+        `According to the analysis, your ward ${statusLine} ${probLine}\n\n` +
+        academicLine + " " + riskText + "\n\n" +
+        (suggestionText ? suggestionText + "\n\n" : "") +
+        `This report is intended to give you an early indication so that support can be planned well in advance. ` +
+        `Please consider discussing a simple, consistent study routine at home and feel free to coordinate with the teaching staff if additional guidance is required.\n\n` +
+        `Regards,\n` +
+        `Class Teacher\n`
+      );
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      errorText.textContent = "";
+
+      const sleepValue = document.getElementById("sleep_hours").value;
+      const screenTimeValue = document.getElementById("screen_time_hours").value;
+      const examStressValue = document.getElementById("exam_stress_level").value;
+      const studyPlanValue = document.getElementById("has_study_plan").value;
+
+      const data = {
+        hours_study_per_day: parseFloat(document.getElementById("hours_study_per_day").value),
+        past_average_score: parseFloat(document.getElementById("past_average_score").value),
+        absences: parseInt(document.getElementById("absences").value, 10),
+        parent_education: document.getElementById("parent_education").value,
+        internet: document.getElementById("internet").value,
+        health: parseInt(document.getElementById("health").value, 10),
+        sleep_hours: sleepValue ? parseFloat(sleepValue) : null,
+        screen_time_hours: screenTimeValue ? parseFloat(screenTimeValue) : null,
+        exam_stress_level: examStressValue ? parseInt(examStressValue, 10) : null,
+        has_study_plan: studyPlanValue === "" ? null : studyPlanValue === "true",
+      };
+
+      if (!data.parent_education || !data.internet) {
+        errorText.textContent = "Please select parent education and internet availability.";
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.detail || `Server error: ${res.status}`);
+        }
+
+        const result = await res.json();
+        const prob = result.probability_pass ?? 0;
+        const pass = !!result.passed;
+        const percent = Math.round(prob * 100);
+        const score = result.estimated_score ?? 0;
+        const risk = result.risk_level ?? "–";
+        const suggestions = Array.isArray(result.suggestions) ? result.suggestions : [];
+        const inputs = result.inputs || data;
+
+        probBarFill.style.width = percent + "%";
+
+        let scoreText = `Estimated final score: ${Number(score).toFixed(1)} / 100.`;
+
+        if (pass) {
+          resultMain.textContent = "Student is likely to pass ✅";
+          resultPill.textContent = "Status: PASS";
+          probText.textContent =
+            `Estimated chance of passing: ${percent}% · ${scoreText}`;
+        } else {
+          resultMain.textContent = "Student is at risk ⚠️";
+          resultPill.textContent = "Status: RISK";
+          probText.textContent =
+            `Estimated chance of passing: ${percent}% – Needs support & study plan. · ${scoreText}`;
+        }
+
+        metaScore.textContent = scoreText;
+        metaRisk.textContent = `Risk level: ${risk}`;
+        metaStudy.textContent = `Study hours: ${inputs.hours_study_per_day} h/day`;
+
+        if (suggestions.length > 0) {
+          suggestionsList.innerHTML = "";
+          suggestions.forEach((tip) => {
+            const li = document.createElement("li");
+            li.textContent = tip;
+            suggestionsList.appendChild(li);
+          });
+          suggestionsBox.style.display = "block";
+        } else {
+          suggestionsBox.style.display = "none";
+        }
+
+        const parentMsg = buildParentMessage(
+          pass,
+          prob,
+          Number(score),
+          risk,
+          suggestions,
+          inputs
+        );
+        parentMessageField.value = parentMsg;
+        copyStatus.textContent = "";
+
+        showPage("result");
+      } catch (err) {
+        console.error(err);
+        errorText.textContent = err.message || "Something went wrong while predicting.";
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    backBtn.addEventListener("click", () => {
+      showPage("input");
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      const text = parentMessageField.value || "";
+      copyStatus.textContent = "";
+      try {
+        await navigator.clipboard.writeText(text);
+        copyStatus.textContent = "Message copied to clipboard.";
+      } catch (e) {
+        copyStatus.textContent = "Unable to copy. You can select and copy manually.";
+      }
+    });
+
+    sendBtn.addEventListener("click", async () => {
+      const mobile = (parentMobileField.value || "").trim();
+      const msg = parentMessageField.value || "";
+
+      copyStatus.textContent = "";
+
+      if (!mobile) {
+        copyStatus.textContent = "Please enter parent mobile number.";
+        return;
+      }
+      if (mobile.length < 8) {
+        copyStatus.textContent = "Entered mobile number looks too short.";
+        return;
+      }
+      if (!msg.trim()) {
+        copyStatus.textContent = "Parent message is empty.";
+        return;
+      }
+
+      try {
+        const res = await fetch("/send-parent-message", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mobile, message: msg }),
+        });
+
+        if (!res.ok) {
+          const detail = await res.json().catch(() => ({}));
+          throw new Error(detail.detail || `Error sending message: ${res.status}`);
+        }
+
+        const data = await res.json();
+        copyStatus.textContent = "Message sent to parent (simulated): " + mobile;
+        console.log("Send result:", data);
+      } catch (err) {
+        console.error(err);
+        copyStatus.textContent = err.message || "Failed to send message.";
+      }
+    });
+
+    showPage("input");
+  </script>
+</body>
+</html>

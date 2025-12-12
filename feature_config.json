@@ -1,0 +1,20 @@
+{
+  "feature_order": [
+    "hours_study_per_day",
+    "past_average_score",
+    "absences",
+    "parent_education",
+    "internet",
+    "health"
+  ],
+  "numeric_features": [
+    "hours_study_per_day",
+    "past_average_score",
+    "absences",
+    "health"
+  ],
+  "categorical_features": [
+    "parent_education",
+    "internet"
+  ]
+}
